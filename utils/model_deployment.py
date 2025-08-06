@@ -2,7 +2,6 @@ import requests
 import os
 
 # function to create model deployment
-# any type of model, be it embedding model or generative models
 def create_deployment(access_token: str, configuration_id: str) -> str:
 
     ai_api_url = os.getenv("AI_API_URL")

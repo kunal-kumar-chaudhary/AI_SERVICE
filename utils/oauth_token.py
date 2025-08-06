@@ -1,16 +1,24 @@
 from logging import Logger
 from urllib.parse import urlencode
-from flask import jsonify
+from dotenv import load_dotenv
 import requests
 import os
+from flask import jsonify
 
-def get_access_token(url: str)-> str:
+
+load_dotenv()
+
+def get_access_token()-> str:
     """
     this function will get the access token from the oauth endpoint
     """
-    oauth_endpoint=os.getenv("AI_CORE_OAUTH_ENDPOINT")
-    client_id= os.getenv("AI_CORE_CLIENT_ID")
-    client_secret= os.getenv("AI_CORE_CLIENT_SECRET")
+    oauth_endpoint=os.getenv("AICORE_AUTH_URL")
+    client_id= os.getenv("AICORE_CLIENT_ID")
+    client_secret= os.getenv("AICORE_CLIENT_SECRET")
+
+    print(oauth_endpoint)
+    print(client_id)
+    print(client_secret)
 
     # validating required enviroment variables
     if not all([oauth_endpoint, client_id, client_secret]):
@@ -46,5 +54,3 @@ def get_access_token(url: str)-> str:
         return access_token
     except Exception as e:
         Logger.info(f"exception: {str(e)}")
-
-    
