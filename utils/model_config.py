@@ -2,6 +2,7 @@ import requests
 import time
 import os
 
+# function for creating model configuration
 def create_configuration(access_token: str, model_name: str) -> str:
     
     ai_api_url = os.getenv("AI_API_URL")

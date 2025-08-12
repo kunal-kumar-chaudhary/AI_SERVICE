@@ -1,0 +1,7 @@
+applications:
+- name: ai-flask-service
+  memory: 256MB
+  disk_quota: 512MB
+  random-route: true
+  docker:
+    image: kunalkumar03/ai-flask-service:latest

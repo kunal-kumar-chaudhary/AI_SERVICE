@@ -59,7 +59,7 @@ def rag_chat() -> Any:
         
         # step 2: augmentation - creating context from retreived documents
         context = "\n\n".join([doc.page_content for doc, _ in results])
-
+        return context
         # step 3: generating response
         answer = generate_rag_response(query, context, temperature, max_tokens)
 

@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from hana_ml import dataframe
 import os
-
+from hana_ml.dataframe import create_dataframe_from_pandas
 
 load_dotenv()
 
@@ -39,6 +39,25 @@ print("table created successfully")
 # inserting new record
 import json
 
+
+def batch_insertion_embedding(rows):
+    conn_ctx = get_hana_db()
+    """
+    args:
+        - rows : list of tuples -> [(document_text: str, embedding_string: str, metadata_json: str), ...]
+    """
+    sql = "INSERT INTO documents_embedding (document_text, embedding, chunk_metadata) VALUES (?, TO_REAL_VECTOR(?), ?)"
+    try:
+        cursor = conn_ctx.connection.cursor()
+        cursor.executemany(sql, rows)
+        conn_ctx.connection.commit()
+        cursor.close()
+        return True
+    except Exception as e:
+        print(f"failed to execute batch insert: {e}")
+        return False
+
+
 def insert_embedding(document_text, embedding_vector, chunk_metadata=None):
     conn = get_hana_db()
 
@@ -64,6 +83,7 @@ def insert_embedding(document_text, embedding_vector, chunk_metadata=None):
     except Exception as e:
         return False
 
+
 # function to find top k similiar documents
 def search_similiar_documents(conn, query_embedding, top_k=5):
     search_sql = """
@@ -76,10 +96,9 @@ def search_similiar_documents(conn, query_embedding, top_k=5):
     try:
         df = conn.execute_sql(search_sql, [query_embedding, top_k])
         # converting hana_ml dataframe to pandas dataframe
-        results = df.collect() 
+        results = df.collect()
         return results
-         
+
     except Exception as e:
         print(f"error searching similar documents: {e}")
         return None
-
