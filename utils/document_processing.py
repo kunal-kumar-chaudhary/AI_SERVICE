@@ -10,7 +10,7 @@ from utils.hana_db_connection import (
     insert_embedding,
     get_hana_db,
 )
-from utils.embedding import get_embedding
+from utils.embedding import get_embedding, get_embeddings_batch
 
 
 def process_and_embed_file_from_url(file_url: str):
@@ -32,22 +32,18 @@ def process_and_embed_file_from_url(file_url: str):
         preprocessed_chunks = preprocess_text_chunks(chunks)
         print("preprocessed chunks: ", preprocessed_chunks)
 
-        # processing each chunk, vectorizing and storing
+        # batch-embed all preprocessed chunks
+        embeddings = get_embeddings_batch(preprocessed_chunks, max_workers=5)
+
+        # processing each chunk's metadata and building rows
         rows = []
-        for i, chunk in enumerate(preprocessed_chunks):
-            embedding_vector = get_embedding(chunk)
-
-            chunk_metadata[i].update(
-                {"chunk_index": i, "chunk_size": len(chunk), "source_url": file_url}
-            )
-
-            # serialize metadata and embedding for parameterized batch insert
+        for i, (chunk, embedding_vector) in enumerate(zip(preprocessed_chunks, embeddings)):
+            chunk_metadata[i].update({"chunk_index": i, "chunk_size": len(chunk), "source_url": file_url})
             metadata_json = json.dumps(chunk_metadata[i])
             embedding_string = str(embedding_vector)
-
-            # building one row: (text, embedding_string, metadata_json)
             rows.append((chunk, embedding_string, metadata_json))
 
+        # batch insertion in db
         success = batch_insertion_embedding(rows=rows)
         if not success:
             raise Exception("failed to insert embedding into database...")
