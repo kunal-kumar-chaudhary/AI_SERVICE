@@ -85,20 +85,42 @@ def insert_embedding(document_text, embedding_vector, chunk_metadata=None):
 
 
 # function to find top k similiar documents
-def search_similiar_documents(conn, query_embedding, top_k=5):
-    search_sql = """
-    SELECT id, document_text, COSINE_SIMILARITY(embedding, ?)
-    AS similarity
-    FROM documents_embedding
-    ORDER BY similarity DESC
-    LIMIT ?
+# ...existing code...
+def search_similiar_documents(query_embedding, top_k=5):
+    conn = get_hana_db()
+
+    # Escape and format inputs
+    vec = str(query_embedding).replace("'", "''")
+    k = int(top_k) if top_k else 5
+    if k <= 0:
+        k = 5
+
+    search_sql = f"""
+    SELECT DOCUMENT_TEXT,
+           CHUNK_METADATA,
+           COSINE_SIMILARITY(EMBEDDING, TO_REAL_VECTOR('{vec}')) AS SIMILARITY
+    FROM DOCUMENTS_EMBEDDING
+    ORDER BY SIMILARITY DESC
+    LIMIT {k}
     """
     try:
-        df = conn.execute_sql(search_sql, [query_embedding, top_k])
-        # converting hana_ml dataframe to pandas dataframe
+        df = conn.sql(search_sql)  # SELECT -> no params here
         results = df.collect()
+        print(results)
         return results
-
     except Exception as e:
         print(f"error searching similar documents: {e}")
+        return None
+
+# function to get all the data from database
+def get_all_data():
+    conn = get_hana_db()
+    sql = "SELECT * FROM documents_embedding"
+    try:
+        df = conn.sql(sql)
+        results = df.collect()
+        print(results)
+        return results
+    except Exception as e:
+        print(f"error fetching all data: {e}")
         return None

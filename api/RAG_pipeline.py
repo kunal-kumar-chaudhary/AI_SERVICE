@@ -5,10 +5,13 @@ import os
 import requests
 from flask import Blueprint, request, jsonify
 
-from utils.hana_db_connection import search_similiar_documents
+from utils.LLM import get_llm_response
+from utils.embedding import get_embedding
+from utils.hana_db_connection import search_similiar_documents, get_all_data
 from utils.oauth_token import get_access_token
 
 rag_pipeline_bp = Blueprint("rag_pipeline", __name__, url_prefix="/api/rag-pipeline")
+
 
 @rag_pipeline_bp.route("/chat", methods=["POST"])
 def rag_chat() -> Any:
@@ -24,11 +27,12 @@ def rag_chat() -> Any:
     "max_token": 500 // optional, response length
     }
     """
+
     try:
-        if not request.is_json():
+        if not request.is_json:
             return jsonify({"error": "request must be json"}), 400
-        
-        data = request.json()
+
+        data = request.get_json()
         query = data.get("query")
         k = data.get("k", 3)
         username_filter = data.get("username")
@@ -37,65 +41,60 @@ def rag_chat() -> Any:
 
         if not query:
             return jsonify({"error": "query is required"}), 400
-        
-        # step 1: retreiving using existing search function
-        results = search_similiar_documents(query=query, k=k)
 
-        # filtering by name
-        if username_filter:
-            filtered_results = []
-            for doc, score in results:
-                if doc.metadata.get("username") == username_filter:
-                    filtered_results.append((doc, score))
-            results = filtered_results
-        
-        if not results:
-            return jsonify({
-                "success": True,
-                "query": query,
-                "answer": "I couldn't find any relevant documents to answer your question.",
-                "sources": []
-            }), 200
-        
+        query_embedding = get_embedding(query)
+
+        # step 1: retreiving using existing search function
+        results_df = search_similiar_documents(query_embedding=query_embedding, top_k=k)
+
+        if results_df is None or results_df.empty:
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "query": query,
+                        "answer": "I couldn't find any relevant documents to answer your question.",
+                        "sources": [],
+                    }
+                ),
+                200,
+            )
+
         # step 2: augmentation - creating context from retreived documents
-        context = "\n\n".join([doc.page_content for doc, _ in results])
-        return context
+        texts = (
+            results_df["DOCUMENT_TEXT"].astype(str).tolist()
+            if "DOCUMENT_TEXT" in results_df.columns
+            else []
+        )
+        context = "\n\n".join(texts)
+
         # step 3: generating response
         answer = generate_rag_response(query, context, temperature, max_tokens)
+        print("Generated answer: ", answer)
 
-        # formatting sources
-        sources = [{
-            "content": doc.page_content[:200] + "..." if len(doc.page_content)>200 else doc.page_content,
-            "metadata": doc.metadata,
-            "similarity_score": float(score)
-        } for doc, score in results]
-
-        return jsonify({
-            "success": True,
-            "query": query,
-            "answer": answer,
-            "sources": sources,
-            "retrieval_count": len(results)
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "query": query,
+                    "answer": answer,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
-def generate_rag_response(query: str, context: str, temperature: float=0.1, max_tokens: int = 500) -> str:
+def generate_rag_response(
+    query: str, context: str, temperature: float = 0.1, max_tokens: int = 500
+) -> str:
     """
     generating response using LLM with retrieved context
     """
     try:
-        deployment_url = os.getenv("DEPLOYED_LLM_ENDPOINT")
-        if not deployment_url:
-            return "LLM service not configured"
         
-        access_token = get_access_token()
-
         prompt = f"""
         Based on the following context, answer the question:
 
@@ -107,23 +106,10 @@ def generate_rag_response(query: str, context: str, temperature: float=0.1, max_
         Answer based only on the context provided:
         """
 
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-            "AI-Resource-Group": "demo"
-        }
+        # response = requests.post(deployment_url, headers=headers, json=payload)
+        response = get_llm_response(prompt=prompt, model_name="gpt-4o-mini")
 
-        payload = {
-            "messages": [{"role": "user", "content": prompt}],
-            "model": "gpt-4",
-            "max_tokens": max_tokens,
-            "temprature": temperature
-        }
+        return response
 
-        response = requests.post(deployment_url, headers=headers, json=payload)
-        response.raise_for_status()
-
-        return response.json()["choices"][0]["message"]["content"]
-    
     except Exception as e:
         return f"error generating response: {str(e)}"

@@ -34,7 +34,6 @@ def create_and_store_embedding() -> Any:
             return jsonify({"error": "request must be json"}), 500
 
         data = request.get_json()
-        print("point 0")
 
         # getting text out of json object inside request
         file_url = data.get("file_url")
@@ -50,7 +49,7 @@ def create_and_store_embedding() -> Any:
 
         # creating metadata
         metadata = {"document_type": document_type, "username": username}
-        print("point 1")
+
         # processing and embedding the file
         process_and_embed_file_from_url(
             file_url=file_url

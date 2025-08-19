@@ -31,7 +31,7 @@ def process_and_embed_file_from_url(file_url: str):
 
         preprocessed_chunks = preprocess_text_chunks(chunks)
         print("preprocessed chunks: ", preprocessed_chunks)
-
+        print("point 3")
         # batch-embed all preprocessed chunks
         embeddings = get_embeddings_batch(preprocessed_chunks, max_workers=5)
 
