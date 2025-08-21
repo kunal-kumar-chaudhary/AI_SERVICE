@@ -66,6 +66,8 @@ def rag_chat() -> Any:
             if "DOCUMENT_TEXT" in results_df.columns
             else []
         )
+
+        # building context
         context = "\n\n".join(texts)
 
         # step 3: generating response

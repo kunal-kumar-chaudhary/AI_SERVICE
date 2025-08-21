@@ -2,7 +2,7 @@ from typing import Any
 from flask import Blueprint, jsonify
 import os
 from flask import request
-
+import threading
 
 from utils.document_processing import process_and_embed_file_from_url
 from utils.embedding import get_embedding
@@ -50,10 +50,12 @@ def create_and_store_embedding() -> Any:
         # creating metadata
         metadata = {"document_type": document_type, "username": username}
 
-        # processing and embedding the file
-        process_and_embed_file_from_url(
-            file_url=file_url
-        )
+        # processing and embedding the file in a different worker thread
+        threading.Thread(
+            target=process_and_embed_file_from_url,
+            args=(file_url,),
+            daemon=True
+        ).start()
 
         print("point ----x----")
         return (
