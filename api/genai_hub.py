@@ -4,9 +4,8 @@ import os
 from flask import request
 import threading
 
-from utils.document_processing import process_and_embed_file_from_url
-from utils.embedding import get_embedding
-from utils.hana_db_connection import insert_embedding, search_similiar_documents
+from utils.document_processing import process_and_embed_file_from_url, process_and_create_knowledge_graph_from_doc
+from utils.hana_db_connection import search_similiar_documents
 from utils.oauth_token import get_access_token
 
 genai_bp = Blueprint("genai_hub", __name__, url_prefix="/api/genai")
@@ -18,7 +17,7 @@ def access_token():
     return jsonify({"access_token": access_token}), 200
 
 
-# for creating and storing embeddings using juts file url
+# for creating and storing embeddings and knowledge graph using just file url
 @genai_bp.route("/create-store-embedding", methods=["POST"])
 def create_and_store_embedding() -> Any:
     """
@@ -53,6 +52,13 @@ def create_and_store_embedding() -> Any:
         # processing and embedding the file in a different worker thread
         threading.Thread(
             target=process_and_embed_file_from_url,
+            args=(file_url,),
+            daemon=True
+        ).start()
+
+        # processing and creating the knowledge graph in a different worker thread
+        threading.Thread(
+            target=process_and_create_knowledge_graph_from_doc,
             args=(file_url,),
             daemon=True
         ).start()
