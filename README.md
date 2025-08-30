@@ -9,7 +9,6 @@ Production-ready (work-in-progress) Flask microservice that exposes APIs for:
 - Programmatic model configuration + deployment (helper utilities)
 - Supabase object storage file fetching
 
-> NOTE: The analysis below is based on a partial code listing (only the first 10 matched files were visible). Some modules referenced in the code (e.g. `utils.embedding`, `utils.hana_db_connection`, `utils.oauth_token`) were not included in the listing. Adjust details if their implementations differ.
 
 ---
 
