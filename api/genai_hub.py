@@ -56,13 +56,6 @@ def create_and_store_embedding() -> Any:
             daemon=True
         ).start()
 
-        # processing and creating the knowledge graph in a different worker thread
-        threading.Thread(
-            target=process_and_create_knowledge_graph_from_doc,
-            args=(file_url,),
-            daemon=True
-        ).start()
-
         print("point ----x----")
         return (
             jsonify(
