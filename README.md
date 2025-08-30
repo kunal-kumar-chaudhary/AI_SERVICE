@@ -354,7 +354,7 @@ Content-Type: application/json
 
 ## License
 
-(Choose a license, e.g. MIT, Apache-2.0, add a `LICENSE` file.)
+MIT
 
 ---
 
