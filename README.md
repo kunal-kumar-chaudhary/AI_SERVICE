@@ -1,4 +1,4 @@
-# AI_FLASK_SERVICE
+# AI_SERVICE
 
 Production-ready (work-in-progress) Flask microservice that exposes APIs for:
 - Upload-free (URL-based) document ingestion
