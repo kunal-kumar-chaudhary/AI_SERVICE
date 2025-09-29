@@ -67,6 +67,7 @@ async def convert_corpus_to_triplets_async(
         if use_orchestrator:
             orchestrator = TripletOrchestrator()
             results = await orchestrator.process_corpus(corpus)
+            print("results from orchestrator:", results)
             return results
         
         else:

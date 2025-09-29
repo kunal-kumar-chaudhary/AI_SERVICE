@@ -13,7 +13,7 @@ class TripletState(BaseModel):
 
     # metadata and tracking
     processing_state: str = "initial"
-    error_messsages: List[str] = []
+    error_messages: List[str] = []
     quality_scores: Dict[str, float] = {}
     retry_count: int = 0
     max_retries: int = 3

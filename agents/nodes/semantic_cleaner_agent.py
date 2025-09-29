@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
 from agents.schemas.state_schema import TripletState
+from agents.utils.parse_llm_response import ParseLLMResponse
 from services.llm_service import get_llm_response_async
 import json
 
@@ -20,7 +21,9 @@ class SemanticCleanerAgent:
 
             prompt = self._create_cleaning_prompt(state.initial_triplets)
             response = await get_llm_response_async(prompt)
-            cleaning_result = self._parse_response(response)
+            llm_response_parsed = ParseLLMResponse._extract_json_from_markdown_response(response)
+            cleaning_result = self._parse_response(llm_response_parsed)
+            print("Cleaning Result:", cleaning_result)
 
             if cleaning_result["success"]:
                 state.cleaned_triplets = cleaning_result["cleaned_triplets"]
@@ -35,6 +38,8 @@ class SemanticCleanerAgent:
         except Exception as e:
             state.error_messages.append(f"Cleaner exception: {str(e)}")
             state.cleaned_triplets = state.initial_triplets  # fallback to initial triplets
+        
+        return state
     
 
     def _create_cleaning_prompt(self, triplets: List[List[str]]) -> str:
@@ -67,13 +72,11 @@ class SemanticCleanerAgent:
         JSON Response:
         """
     
-    def _parse_response(self, response: str) -> Dict[str, Any]:
+    def _parse_response(self, data: Dict[str, Any]) -> Dict[str, Any]:  # Changed parameter type
         """
-        parse cleaning response
+        parse cleaning response - expects already parsed dict
         """
         try:
-
-            data = json.loads(response)
             required_fields = ["cleaned_triplets", "cleaning_actions", "quality_score", "feedback"]
             if not all(key in data for key in required_fields):
                 return {
@@ -87,7 +90,7 @@ class SemanticCleanerAgent:
                 return {"success": False, "error": "cleaned_triplets should be a list"}
             
             for triplet in triplets:
-                if not isinstance(triplet, list) or len(triplet)!=3:
+                if not isinstance(triplet, list) or len(triplet) != 3:
                     return {"success": False, "error": f"Invalid triplet format: {triplet}"}
             
             return {
@@ -98,7 +101,5 @@ class SemanticCleanerAgent:
                 "feedback": data["feedback"]
             }
 
-        except json.JSONDecodeError as e:
-            return {"success": False, "error": f"JSON decode error: {str(e)}"}
         except Exception as e:
             return {"success": False, "error": f"Unexpected error: {str(e)}"}

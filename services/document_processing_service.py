@@ -21,8 +21,8 @@ async def process_and_embed_file_from_url(file_url: str):
     Download file from Supabase, extract text, create embedding and triplets, stores it in database in corresponding tables
     """
     try:
-        text_content = await process_file_from_url(file_url)
-        chunks = await split_text_into_chunks(text_content)
+        text_content = process_file_from_url(file_url)
+        chunks = split_text_into_chunks(text_content)
 
         # dictionary to hold metadata
         metadata = {}
@@ -30,7 +30,7 @@ async def process_and_embed_file_from_url(file_url: str):
         # creating metadata for each chunk
         chunk_metadata = [metadata.copy() for _ in chunks]
 
-        preprocessed_chunks = await preprocess_text_chunks(chunks)
+        preprocessed_chunks = preprocess_text_chunks(chunks)
 
         # creating reference ids for triple store table to point to embedding table
         ref_ids = [str(uuid.uuid4()) for _ in preprocessed_chunks]

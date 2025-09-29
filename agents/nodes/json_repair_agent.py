@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from agents.utils.parse_llm_response import ParseLLMResponse
 from services.llm_service import get_llm_response_async
 import json
 import re
@@ -26,7 +27,8 @@ class JSONRepairAgent:
             response = await get_llm_response_async(prompt)
 
             # extracting json from response
-            repaired_json = self._extract_json_from_response(response)
+            repaired_json = ParseLLMResponse._extract_json_from_markdown_response(response)
+            print("Repaired JSON:", repaired_json)
 
             if repaired_json:
                 return {"success": True, "data": json.loads(repaired_json)}

@@ -19,7 +19,7 @@ class TripletOrchestrator:
         self.aggregator = AggregatorAgent()
         self.json_repair = JSONRepairAgent()
 
-    async def preprocess_text_chunk(self, text_chunk: str) ->TripletState:
+    async def preprocess_text_chunk(self, text_chunk: str) ->List[Tuple[str, str, str]]:
         """
         process a single text chunk through the multi agent pipeline
 
@@ -44,6 +44,7 @@ class TripletOrchestrator:
                 stage_retry_count = 0
                 while True:
                     state = await self.cleaner.process(state)
+                    print
                     if not self._should_retry(state):
                         break
                     state.retry_count += 1

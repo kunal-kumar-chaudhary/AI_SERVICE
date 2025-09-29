@@ -17,6 +17,7 @@ class AggregatorAgent:
             # calculating overall quality score
             overall_score = self._calculate_overall_quality(state)
             state.quality_scores["overall"] = overall_score
+            print("Final Triplets:", state.final_triplets)
         
         except Exception as e:
             state.error_messages.append(f"Aggregator exception: {str(e)}")

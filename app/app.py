@@ -48,9 +48,9 @@ if __name__ == '__main__':
     port = int(cf_port) if cf_port else 5000
     
     uvicorn.run(
-        app,  
+        "__main__:app",  
         host='0.0.0.0',
         port=port,
-        reload=False,
+        reload=True,
         log_level="info"
     )

@@ -1,6 +1,8 @@
 from typing import Dict, Any
+import re
 from agents.schemas.state_schema import TripletState
 from agents.schemas.agent_schemas import AnalyzerResponse
+from agents.utils.parse_llm_response import ParseLLMResponse
 from services.llm_service import get_llm_response_async
 import json
 
@@ -15,9 +17,11 @@ class AnalyzerAgent:
         try:
             prompt = self._create_analysis_prompt(state.raw_text)
             response = await get_llm_response_async(prompt)
+            print("LLM response:", response)        
 
             # parsing LLM response
             analysis_result = self._parse_response(response)
+            print("Analyzer Result:", analysis_result)
 
             if analysis_result["success"]:
                 state.initial_triplets = analysis_result["triplets"]
@@ -59,14 +63,13 @@ class AnalyzerAgent:
         parse LLM response and validate structure
         """
 
-        try: 
-            data = json.loads(response)
-
+        try:
+            data = ParseLLMResponse._extract_json_from_markdown_response(response=response)
             # validating required fields
             if not all(key in data for key in ["triplets", "quality_score", "feedback"]):
                 return {"success": False, "error": "Missing required fields in response"}
-            
-            # validare triplet structure
+
+            # validate triplet structure
             triplets = data["triplets"]
             if not isinstance(triplets, list):
                 return {"success": False, "error": "Triplets should be a list"}

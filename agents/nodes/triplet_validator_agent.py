@@ -1,5 +1,7 @@
 from typing import List, Dict, Any
 from agents.schemas.state_schema import TripletState
+from agents.utils.parse_llm_response import ParseLLMResponse
+from agents.utils.parse_llm_response import ParseLLMResponse
 from services.llm_service import get_llm_response_async
 import json
 
@@ -23,8 +25,8 @@ class TripletValidatorAgent:
                 triplets_to_validate, state.raw_text
             )
             response = await get_llm_response_async(prompt)
-
-            validation_result = self._parse_response(response)
+            llm_response_parsed = ParseLLMResponse._extract_json_from_markdown_response(response)
+            validation_result = self._parse_response(llm_response_parsed)
 
             if validation_result["success"]:
                 state.validated_triplets = validation_result["validated_triplets"]
