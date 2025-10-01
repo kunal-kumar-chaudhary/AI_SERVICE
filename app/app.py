@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import uvicorn
 import sys
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -48,7 +47,7 @@ if __name__ == '__main__':
     port = int(cf_port) if cf_port else 5000
     
     uvicorn.run(
-        "__main__:app",  
+        "app.app:app",  
         host='0.0.0.0',
         port=port,
         reload=True,

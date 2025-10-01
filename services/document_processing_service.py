@@ -10,11 +10,10 @@ import os
 import uuid
 import tempfile
 from repositories.hana_repository import batch_insertion_embedding, insert_triplets
-
 from services.knowledge_graph_service import convert_corpus_to_triplets_async
 from services.embedding_service import get_embeddings_batch
-from services.triplets_service import extract_corpus_triplets
-
+import logging
+logger = logging.getLogger(__name__)
 
 async def process_and_embed_file_from_url(file_url: str):
     """
@@ -22,6 +21,7 @@ async def process_and_embed_file_from_url(file_url: str):
     """
     try:
         text_content = process_file_from_url(file_url)
+        logger.info("Successfully extracted text from the document...", text_content[:100])  # Print first 100 chars for verification
         chunks = split_text_into_chunks(text_content)
 
         # dictionary to hold metadata
@@ -31,6 +31,7 @@ async def process_and_embed_file_from_url(file_url: str):
         chunk_metadata = [metadata.copy() for _ in chunks]
 
         preprocessed_chunks = preprocess_text_chunks(chunks)
+        logger.info(f"Preprocessed {len(preprocessed_chunks)} chunks for embedding and triplet extraction.")
 
         # creating reference ids for triple store table to point to embedding table
         ref_ids = [str(uuid.uuid4()) for _ in preprocessed_chunks]
@@ -40,8 +41,6 @@ async def process_and_embed_file_from_url(file_url: str):
 
         # creating triplets for all preprocessed chunks
         triplets_per_chunk = await convert_corpus_to_triplets_async(preprocessed_chunks)
-
-        return triplets_per_chunk
 
         # processing each chunk's metadata and building rows for embdeding insert
         rows = []
@@ -60,6 +59,17 @@ async def process_and_embed_file_from_url(file_url: str):
             embedding_string = str(embedding_vector)
             rows.append((chunk, embedding_string, metadata_json, ref_ids[i]))
 
+        # batch insertion of embeddings in db
+        # first inserting embeddings to ensure ref_ids exist for triplet insertion
+        success = batch_insertion_embedding(rows=rows)
+        if not success:
+            raise Exception("failed to insert embedding into or ID count mismatch...")
+        else:
+            logger.info(
+                "Successfully inserted all the embedding and their corresponding embeddings in the database."
+            )
+
+        
         # batch insertion of triplets in db
         triplets_rows = []
         for chunk_index, (ref_id, chunk_triplets) in enumerate(
@@ -68,27 +78,20 @@ async def process_and_embed_file_from_url(file_url: str):
             if not chunk_triplets:
                 continue
             for t in chunk_triplets:
-                if isinstance(t, dict):
+                if isinstance(t, dict): # handling dict format (in case - good to have!)
                     head = t.get("subject")
                     relation = t.get("predicate")
                     tail = t.get("object")
                 else:
-                    head, relation, tail = t
+                    head, relation, tail = t # handling tuple format
                 triplets_rows.append((ref_id, chunk_index, head, relation, tail))
 
+        # inserting triplets 
         if triplets_rows:
             insert_triplets(triplets_rows)
         else:
-            print("No triplets to insert.")
+            logger.warning("No triplets to insert into the database.")
 
-        # batch insertion of embeddings in db
-        success = batch_insertion_embedding(rows=rows)
-        if not success:
-            raise Exception("failed to insert embedding into or ID count mismatch...")
-        else:
-            print(
-                f"successfully inserted all the embedding and their corresponding embeddings in the database..."
-            )
 
         # building combined in memory structure (in case we need it downstream)
         combined = []
