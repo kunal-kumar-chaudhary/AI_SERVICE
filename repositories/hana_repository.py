@@ -91,7 +91,7 @@ def ensure_triple_store():
             "CREATE INDEX IDX_TRIPLE_REF ON TRIPLE_STORE (EMB_REF_ID, CHUNK_INDEX)"
         )
         logger.info("Successfully created triple store and indexes...")
-        
+
     except Exception as e:
         print(f"error ensuring triple store: {e}")
 
@@ -181,7 +181,7 @@ def insert_embedding(document_text, embedding_vector, chunk_metadata=None):
 
 # function to find top k similiar documents
 # ...existing code...
-def search_similiar_documents(query_embedding, top_k=5):
+async def search_similiar_documents(query_embedding, top_k=5):
     conn = get_hana_db()
 
     # Escape and format inputs

@@ -1,15 +1,14 @@
 from fastapi import APIRouter, HTTPException
-from typing import Any
-
+from services.context_service import hybrid_search_context
 from services.llm_service import get_llm_response_async
-from services.embedding_service import get_embedding
-from repositories.hana_repository import search_similiar_documents, get_all_data
+import logging
 
 # Import schemas
 from schemas.llm_schemas import RAGChatRequest, RAGChatResponse
 
 # Create router
 rag_pipeline_router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @rag_pipeline_router.post("/chat", response_model=RAGChatResponse)
@@ -28,32 +27,20 @@ async def rag_chat(request: RAGChatRequest) -> RAGChatResponse:
         if not request.query:
             raise HTTPException(status_code=400, detail="Query is required")
 
-        query_embedding = get_embedding(request.query)
+        # searching similiar documents and triplets for building context
+        context = await hybrid_search_context(request.query, top_k=request.k, expand_graph=True)
+        logger.info(f"Retrieved context: {context}")
 
-        # Step 1: Retrieving using existing search function
-        results_df = search_similiar_documents(query_embedding=query_embedding, top_k=request.k)
-
-        if results_df is None or results_df.empty:
+        if context == "":
             return RAGChatResponse(
                 success=True,
                 query=request.query,
                 answer="I couldn't find any relevant documents to answer your question."
             )
 
-        # Step 2: Augmentation - creating context from retrieved documents
-        texts = (
-            results_df["DOCUMENT_TEXT"].astype(str).tolist()
-            if "DOCUMENT_TEXT" in results_df.columns
-            else []
-        )
-
-        # Building context
-        context = "\n\n".join(texts)
-
-        # Step 3: Generating response
-        answer = generate_rag_response(request.query, context, request.temperature, request.max_tokens)
-        print("Generated answer: ", answer)
-
+        answer = await generate_rag_response(request.query, context, request.temperature, request.max_tokens)
+        logger.info(f"Generated answer: {answer}")
+        
         return RAGChatResponse(
             success=True,
             query=request.query,
@@ -61,6 +48,7 @@ async def rag_chat(request: RAGChatRequest) -> RAGChatResponse:
         )
 
     except Exception as e:
+        logger.error(f"Error occurred: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail={"success": False, "error": str(e)}
@@ -85,7 +73,6 @@ async def generate_rag_response(
         Answer based only on the context provided:
         """
 
-        # Fixed: get_llm_response only takes prompt parameter
         response = await get_llm_response_async(prompt=prompt)
 
         return response

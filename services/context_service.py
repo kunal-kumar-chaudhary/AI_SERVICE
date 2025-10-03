@@ -1,15 +1,21 @@
 from repositories.hana_repository import search_similiar_documents
+from services.embedding_service import get_embedding
 from services.knowledge_graph_service import get_triplets_by_chunks
+import logging
+logger = logging.getLogger(__name__)
 
-def hybrid_search_context(query: str, top_k: int = 5, expand_graph: bool = True) -> str:
+async def hybrid_search_context(query: str, top_k: int = 5, expand_graph: bool = True) -> str:
     """
     Hybrid retrieval: vector similarity + graph retrieval
     returns combined textual context for RAG
     """
-    # vector search
-    vector_results = search_similiar_documents(query, top_k=top_k)
 
-    if not vector_results:
+    query_embedding = await get_embedding(query)
+    # vector search
+    vector_results = await search_similiar_documents(query_embedding, top_k=top_k)
+
+    if vector_results is None or vector_results.empty:
+        logger.info("No similar documents found.")
         return ""
     
     context_parts = []
