@@ -11,7 +11,6 @@ by establishing clear contracts about:
 from abc import ABC, abstractmethod
 from typing import Optional, Any, List, Dict, Union
 import logging
-from enum import Enum
 
 logger = logging.getLogger(__name__)
 
