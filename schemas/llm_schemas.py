@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class LLMRequest(BaseModel):
@@ -21,3 +21,4 @@ class RAGChatResponse(BaseModel):
     query: str
     answer: str
     context_used: Optional[str] = None
+    from_cache: bool = Field(default=False, description="whether answer came from cache")

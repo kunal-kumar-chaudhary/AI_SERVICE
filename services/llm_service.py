@@ -27,24 +27,33 @@ load_dotenv()
 import aiohttp
 from auth.oauth_token import get_access_token_async
 
-async def get_llm_response_async(prompt: str):
-    url = "https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/d5903e0d176ce0e4/chat/completions?api-version=2023-05-15"
-    access_token = await get_access_token_async()
+class LLMService:
+    """
+    LLM service
+    """
 
-    payload = {
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
-    }
+    async def get_llm_response_async(prompt: str):
+        url = "https://api.ai.prod.eu-central-1.aws.ml.hana.ondemand.com/v2/inference/deployments/d5903e0d176ce0e4/chat/completions?api-version=2023-05-15"
+        access_token = await get_access_token_async()
 
-    headers = {
-        "AI-Resource-Group": "demo",
-        "Accept": "application/json",
-        "Content-Type": "application/json", 
-        "Authorization": f"Bearer {access_token}",
-    }
+        payload = {
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, json=payload) as response:
-            response_data = await response.json()
-            return response_data["choices"][0]["message"]["content"]
+        headers = {
+            "AI-Resource-Group": "demo",
+            "Accept": "application/json",
+            "Content-Type": "application/json", 
+            "Authorization": f"Bearer {access_token}",
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response_data = await response.json()
+                return response_data["choices"][0]["message"]["content"]
+        
+
+# singleton instance
+llm_service = LLMService()

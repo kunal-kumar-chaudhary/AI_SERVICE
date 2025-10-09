@@ -11,7 +11,7 @@ import uuid
 import tempfile
 from repositories.hana_repository import batch_insertion_embedding, insert_triplets
 from services.knowledge_graph_service import convert_corpus_to_triplets_async
-from services.embedding_service import get_embeddings_batch
+from services.embedding_service import embedding_service
 import logging
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,9 @@ async def process_and_embed_file_from_url(file_url: str):
         ref_ids = [str(uuid.uuid4()) for _ in preprocessed_chunks]
 
         # batch-embed all preprocessed chunks
-        embeddings = await get_embeddings_batch(preprocessed_chunks, max_workers=5)
-
+        embeddings = await embedding_service.get_embeddings_batch(preprocessed_chunks, max_workers=5)
+        logger.info(f"Successfully generated embeddings for {len(embeddings)} chunks.")
+        
         # creating triplets for all preprocessed chunks
         triplets_per_chunk = await convert_corpus_to_triplets_async(preprocessed_chunks)
 
