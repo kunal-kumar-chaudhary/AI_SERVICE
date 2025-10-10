@@ -25,11 +25,13 @@ app.add_middleware(
 # from api.routes.document import routes as document_router
 from api.routes.RAG_pipeline import rag_pipeline_router
 from api.routes.genai_hub import genai_router
+from api.routes.financial_extraction import financial_router
 
 # Including routers with their prefixes
 # app.include_router(document_router, prefix="/api/documents", tags=["documents"])
 app.include_router(rag_pipeline_router, prefix="/api/rag-pipeline", tags=["rag"])
 app.include_router(genai_router, prefix="/api/genai", tags=["genai"])
+app.include_router(financial_router, prefix="/api/financial", tags=["financial"])
 
 # Root endpoint
 @app.get("/")

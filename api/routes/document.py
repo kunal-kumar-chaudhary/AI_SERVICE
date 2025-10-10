@@ -3,10 +3,12 @@ from flask import Blueprint, request, jsonify
 # Create a Blueprint for document endpoints
 document_bp = Blueprint('document', __name__, url_prefix='/api/documents')
 
+"""
+document processing related endpoints
+a complete pipeline making use of SAP AI core orchestration service
+"""
 
-@document_bp.route("/")
-
-@document_bp.route('/', methods=[''])
+@document_bp.route('/', methods=['GET'])
 def get_documents():
     """Get all documents"""
     # Placeholder for document retrieval logic
