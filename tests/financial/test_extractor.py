@@ -1,5 +1,5 @@
 import asyncio
-from agents.financial.orchestrator import financial_orchestrator
+from agents.sequential_financial.orchestrator import financial_orchestrator
 
 async def test_extraction():
     """
@@ -26,5 +26,5 @@ async def test_extraction():
 
 if __name__ == "__main__":
     asyncio.run(test_extraction())
-    
+
 

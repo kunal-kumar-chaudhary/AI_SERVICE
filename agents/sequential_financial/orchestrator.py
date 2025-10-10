@@ -1,8 +1,8 @@
 from langgraph.graph import StateGraph, END
-from agents.financial.schemas.state_schema import FinancialState
-from agents.financial.nodes.pl_extractor import PLExtractor
-from agents.financial.nodes.balance_sheet_agent import BalanceSheetExtractor
-from agents.financial.nodes.aggregator_agent import Aggregator
+from agents.sequential_financial.schemas.state_schema import FinancialState
+from agents.sequential_financial.nodes.pl_extractor import PLExtractor
+from agents.sequential_financial.nodes.balance_sheet_agent import BalanceSheetExtractor
+from agents.sequential_financial.nodes.aggregator_agent import Aggregator
 
 class FinancialOrchestrator:
     """Minimal financial extraction orchestrator"""

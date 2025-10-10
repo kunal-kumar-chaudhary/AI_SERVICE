@@ -1,6 +1,6 @@
 import json
 import re
-from agents.financial.schemas.state_schema import FinancialState
+from agents.sequential_financial.schemas.state_schema import FinancialState
 from services.llm_service import llm_service
 
 

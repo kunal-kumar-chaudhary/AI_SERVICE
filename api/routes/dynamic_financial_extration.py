@@ -3,12 +3,12 @@ from pathlib import Path
 import tempfile
 import os
 
-from agents.sequential_financial.orchestrator import financial_orchestrator
+from agents.dynamic_financial.orchestrator import dynamic_financial_orchestrator
 from agents.sequential_financial.utils.file_parser import parse_file
 
-financial_router = APIRouter()
+dfr = APIRouter()
 
-@financial_router.post("/extract")
+@dfr.post("/extract")
 async def extract_financial_data(file: UploadFile = File(...)):
     """
     Extract financial data from PDF or Word document
@@ -35,7 +35,7 @@ async def extract_financial_data(file: UploadFile = File(...)):
         text = parse_file(tmp_path)
         
         # Extract financial data
-        result = await financial_orchestrator.extract(text)
+        result = await dynamic_financial_orchestrator.extract(text)
         
         # Cleanup 
         os.unlink(tmp_path)
